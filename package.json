@@ -36,6 +36,10 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-web": "~0.21.0",
+<<<<<<< HEAD
+=======
+    "react-native-webview": "13.15.0",
+>>>>>>> d22ed781220c11a9ff7d062ea61f250579e1f01d
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
