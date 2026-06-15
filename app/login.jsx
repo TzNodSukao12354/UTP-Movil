@@ -1,172 +1,156 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Image, Modal } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Stack, useRouter } from 'expo-router';
-import { WebView } from 'react-native-webview';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  Alert,
+  Modal,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { WebView } from "react-native-webview";
+import styles, { ColorLogin } from "./csslogin";
 
-export default function LoginScreen() {
+export default function Login() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
-  
-  const loginUrl = "https://sso.utp.edu.pe/auth/realms/Xpedition/protocol/openid-connect/auth?client_id=pao-web&redirect_uri=https%3A%2F%2Fclass.utp.edu.pe%2F&state=9d029327-5685-48ce-8d26-8de0929efb81&response_mode=fragment&response_type=code&scope=openid&nonce=a2b937af-d616-464b-8ad2-928087a7a077";
 
-  const handleLogin = () => {
-    // Abrimos el WebView interno
-    setShowWebView(true);
+  // URL del SSO de UTP (exacta como la pediste)
+  const SSO_URL =
+    "https://sso.utp.edu.pe/auth/realms/Xpedition/protocol/openid-connect/auth" +
+    "?client_id=pao-web" +
+    "&redirect_uri=" +
+    encodeURIComponent("https://class.utp.edu.pe/") +
+    "&state=08465e1f-6f09-47e7-8b65-59cedb87752f" +
+    "&response_mode=fragment" +
+    "&response_type=code" +
+    "&scope=openid" +
+    "&nonce=b54f3b1e-4d66-4b53-92c8-d341db816888";
+
+  const handleLoginSuccess = () => {
+    setIsLoading(false);
+    setShowWebView(false);
+    
+    // Pequeño delay para que el Modal de iPhone se cierre limpio antes de navegar
+    setTimeout(() => {
+      Alert.alert("✅ Bienvenido", "Autenticación UTP verificada");
+      router.replace("/genero");
+    }, 100);
+  };
+
+  const checkUrl = (url) => {
+    console.log("🔍 Verificando URL:", url);
+    // Si llega a la página de cursos de UTP o tiene el código de éxito
+    if (
+      url.includes("class.utp.edu.pe/student/courses") ||
+      (url.includes("class.utp.edu.pe") && url.includes("code="))
+    ) {
+      handleLoginSuccess();
+      return true;
+    }
+    return false;
   };
 
   const handleNavigationStateChange = (navState) => {
-    // Detectamos si la URL contiene "class.utp.edu.pe/student" lo cual indica que 
-    // el login fue exitoso y el usuario está entrando al portal de estudiantes.
-    if (navState.url.includes('class.utp.edu.pe/student')) {
-      setShowWebView(false); // Cerramos el WebView
-      router.replace('/inicio'); // Redirigimos automáticamente al Feed (/inicio)
-    }
+    checkUrl(navState.url);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar style="light" />
+      <View style={styles.trianguloDerecha} />
+      <View style={styles.trianguloIzquierda} />
 
-      {/* MODAL CON WEBVIEW PARA EL SSO */}
-      <Modal visible={showWebView} animationType="slide" onRequestClose={() => setShowWebView(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#0A192F' }}>
-          <View style={styles.webviewHeader}>
-            <TouchableOpacity onPress={() => setShowWebView(false)}>
-              <Text style={styles.closeButtonText}>Cancelar</Text>
-            </TouchableOpacity>
-            <Text style={styles.webviewTitle}>Autenticación UTP</Text>
+      <View style={styles.content}>
+        <View style={styles.logoRow}>
+          <View style={[styles.logoBox, styles.logoRed]}>
+            <Text style={styles.logoText}>U</Text>
           </View>
-          
-          <WebView 
-            source={{ uri: loginUrl }} 
+          <View style={[styles.logoBox, styles.logoDark]}>
+            <Text style={styles.logoText}>T</Text>
+          </View>
+          <View style={[styles.logoBox, styles.logoRed]}>
+            <Text style={styles.logoText}>P</Text>
+          </View>
+          <Text style={styles.plus}>+</Text>
+          <Text style={styles.movil}>Movil</Text>
+        </View>
+
+        <Text style={styles.title}>Bienvenido a UTP+Movil</Text>
+        <Text style={styles.subtitle}>
+          Conéctate con tu comunidad universitaria{"\n"}y vive la experiencia
+          UTP.
+        </Text>
+
+        <View style={styles.spacing} />
+
+        <TouchableOpacity
+          style={[styles.utpButton, isLoading && styles.buttonDisabled]}
+          onPress={() => {
+            setIsLoading(true);
+            setShowWebView(true);
+          }}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Text style={styles.utpText}>Conectando...</Text>
+          ) : (
+            <>
+              <Ionicons name="school" size={24} color={ColorLogin.blanco} />
+              <Text style={styles.utpText}>Iniciar Sesión con UTP+Class</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.infoText}>
+          Serás redirigido al portal de la UTP para verificar tu identidad
+        </Text>
+      </View>
+
+      {/* Modal con WebView para el SSO */}
+      <Modal visible={showWebView} animationType="slide">
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: 15,
+              backgroundColor: "#111",
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 16, fontWeight: "bold" }}>
+              Autenticación UTP
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowWebView(false);
+                setIsLoading(false);
+              }}
+            >
+              <Text
+                style={{ color: "#E60023", fontSize: 16, fontWeight: "bold" }}
+              >
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <WebView
+            source={{ uri: SSO_URL }}
             onNavigationStateChange={handleNavigationStateChange}
-            style={{ flex: 1 }}
+            onShouldStartLoadWithRequest={(request) => {
+              // Verificamos la URL antes de que empiece a cargar (crucial para iPhone)
+              const shouldStop = checkUrl(request.url);
+              return !shouldStop; // Si detectamos éxito, detenemos la carga y cerramos
+            }}
             startInLoadingState={true}
+            incognito={true}
+            userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1"
           />
         </SafeAreaView>
       </Modal>
-
-      <View style={styles.content}>
-        
-        {/* Contenedor de la Imagen/Logo */}
-        <View style={styles.logoContainer}>
-          <Image 
-            source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Logo_UTP.png/600px-Logo_UTP.png' }} 
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Textos Principales */}
-        <Text style={styles.title}>UTP+Movil</Text>
-        <Text style={styles.subtitle}>Inicia sesión mediante</Text>
-
-        {/* Botón Principal */}
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={handleLogin}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>Ingresar mediante UTP+Class</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0A192F', // Azul oscuro moderno
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-  },
-  logoContainer: {
-    width: 140,
-    height: 140,
-    backgroundColor: '#FFFFFF', // Fondo blanco para que el logo de la UTP resalte
-    borderRadius: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
-    shadowColor: '#00B4D8', // Sombra celeste
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
-    elevation: 10,
-    borderWidth: 3,
-    borderColor: '#00B4D8', // Borde celeste
-    overflow: 'hidden', // Asegura que la imagen no se salga de los bordes redondeados
-  },
-  logoImage: {
-    width: 100,
-    height: 100,
-  },
-  title: {
-    fontSize: 38,
-    fontWeight: '800',
-    color: '#FFFFFF', // Blanco
-    marginBottom: 12,
-    textAlign: 'center',
-    letterSpacing: 1.2,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8892B0', // Azul grisáceo claro
-    marginBottom: 60,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontWeight: '400',
-  },
-  button: {
-    backgroundColor: '#00B4D8', // Celeste
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-    width: '100%',
-    alignItems: 'center',
-    shadowColor: '#00B4D8',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  webviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    backgroundColor: '#0A192F',
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E3A68',
-  },
-  closeButtonText: {
-    color: '#00B4D8',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  webviewTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 20,
-  }
-});
